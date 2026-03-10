@@ -1,0 +1,170 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 15% 10%;
+    --foreground: 38 50% 85%;
+
+    --card: 30 12% 14%;
+    --card-foreground: 38 50% 85%;
+
+    --popover: 30 12% 14%;
+    --popover-foreground: 38 50% 85%;
+
+    --primary: 36 80% 55%;
+    --primary-foreground: 30 15% 8%;
+
+    --secondary: 30 10% 20%;
+    --secondary-foreground: 38 40% 75%;
+
+    --muted: 30 8% 18%;
+    --muted-foreground: 30 15% 50%;
+
+    --accent: 18 70% 45%;
+    --accent-foreground: 38 50% 90%;
+
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 38 50% 90%;
+
+    --border: 30 12% 22%;
+    --input: 30 10% 20%;
+    --ring: 36 80% 55%;
+
+    --radius: 0.25rem;
+
+    --warm: 36 80% 55%;
+    --warm-glow: 30 60% 40%;
+    --sepia: 35 30% 30%;
+    --grain-opacity: 0.06;
+    --film-border: 30 15% 25%;
+
+    --sidebar-background: 30 12% 12%;
+    --sidebar-foreground: 38 50% 85%;
+    --sidebar-primary: 36 80% 55%;
+    --sidebar-primary-foreground: 30 15% 8%;
+    --sidebar-accent: 30 10% 20%;
+    --sidebar-accent-foreground: 38 50% 85%;
+    --sidebar-border: 30 12% 22%;
+    --sidebar-ring: 36 80% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+/* Film grain overlay */
+.film-grain {
+  position: relative;
+}
+
+.film-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: overlay;
+}
+
+/* Worn edge effect */
+.worn-edge {
+  box-shadow:
+    inset 0 0 30px hsl(30 15% 10% / 0.5),
+    0 0 0 1px hsl(var(--film-border)),
+    0 4px 20px hsl(30 15% 5% / 0.4);
+}
+
+/* Vintage vignette */
+.vignette::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, hsl(30 15% 5% / 0.6) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Typewriter text effect */
+.typewriter {
+  font-family: 'Special Elite', 'Courier New', monospace;
+}
+
+/* Sepia photo effect */
+.sepia-card {
+  background: linear-gradient(145deg, hsl(30 12% 14%), hsl(30 12% 16%));
+  border: 1px solid hsl(var(--film-border));
+}
+
+/* Ticket stub style */
+.ticket-stub {
+  border-left: 3px dashed hsl(var(--muted-foreground));
+  position: relative;
+}
+
+.ticket-stub::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: hsl(var(--background));
+}
+
+.ticket-stub::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  bottom: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: hsl(var(--background));
+}
+
+/* Star rating display */
+.star-filled {
+  color: hsl(var(--primary));
+}
+
+.star-empty {
+  color: hsl(var(--muted));
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--sepia));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--warm-glow));
+}
