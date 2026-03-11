@@ -16,6 +16,7 @@ type DbMovie = {
   genres: string;
   country: string | null;
   letterboxdRating: number | null;
+  imdbRating: number | null;
 };
 
 // Batch size for SQL IN clause — avoids massive queries for large collections
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
       const placeholders = chunk.map((_, idx) => `$${idx + 1}`).join(', ');
 
       const movies = await prisma.$queryRawUnsafe<DbMovie[]>(
-        `SELECT title, year, director, genres, country, "letterboxdRating"
+        `SELECT title, year, director, genres, country, "letterboxdRating", "imdbRating"
          FROM "Movie"
          WHERE LOWER(title) IN (${placeholders})`,
         ...chunk,
@@ -56,7 +57,8 @@ export async function POST(req: NextRequest) {
             director: movie.director ?? 'Unknown',
             genres: JSON.parse(movie.genres ?? '[]'),
             country: movie.country ?? 'Unknown',
-            lbAvg: movie.letterboxdRating ?? 0,
+            // Prefer real Letterboxd rating; fall back to IMDb/2 as a /5 proxy
+            lbAvg: movie.letterboxdRating ?? (movie.imdbRating != null ? Math.round(movie.imdbRating / 2 * 10) / 10 : 0),
           };
         }
       }

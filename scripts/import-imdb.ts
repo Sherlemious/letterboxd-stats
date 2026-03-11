@@ -133,7 +133,7 @@ async function main() {
     if (parseInt(numVotesStr, 10) < MIN_VOTES) continue;
     const movie = basics.get(tconst);
     if (!movie) continue;
-    movie.rating = Math.round((parseFloat(avgRatingStr) / 2) * 10) / 10;
+    movie.rating = Math.round(parseFloat(avgRatingStr) * 10) / 10;
     filtered.set(tconst, movie);
     basics.delete(tconst); // free memory progressively
   }
@@ -235,7 +235,7 @@ async function main() {
       where: { title_year: { title: movie.title, year: movie.year } },
       update: {
         genres: JSON.stringify(movie.genres),
-        letterboxdRating: movie.rating ?? null,
+        imdbRating: movie.rating ?? null,
         director: movie.director ?? null,
         country: movie.country ?? null,
       },
@@ -243,7 +243,7 @@ async function main() {
         title: movie.title,
         year: movie.year,
         genres: JSON.stringify(movie.genres),
-        letterboxdRating: movie.rating ?? null,
+        imdbRating: movie.rating ?? null,
         director: movie.director ?? null,
         country: movie.country ?? null,
       },
