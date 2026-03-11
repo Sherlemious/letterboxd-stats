@@ -1,45 +1,51 @@
 "use client";
+import { useMemo } from 'react';
 import { UserProfile } from '@/lib/types';
 import { getRatingDistribution, getAvgRating, getAvgRatingByYear, getDecadeDistribution, getTasteSummary } from '@/lib/stats';
 import { getRecommendations } from '@/lib/film-data';
 import AdvancedStats from '@/components/AdvancedStats';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Star, Film } from 'lucide-react';
+import { Star, StarHalf, Film } from 'lucide-react';
 
 interface SoloStatsProps {
   profile: UserProfile;
 }
 
 const tooltipStyle = {
-  background: 'hsl(30, 12%, 14%)',
-  border: '1px solid hsl(30, 12%, 22%)',
+  background: 'hsl(var(--card))',
+  border: '1px solid hsl(var(--border))',
   borderRadius: '2px',
   fontFamily: 'Special Elite',
-  color: 'hsl(38, 50%, 85%)',
+  color: 'hsl(var(--card-foreground))',
 };
 
 const SoloStats = ({ profile }: SoloStatsProps) => {
-  const dist = getRatingDistribution(profile.entries);
-  const avg = getAvgRating(profile.entries);
-  const byYear = getAvgRatingByYear(profile.entries);
-  const decades = getDecadeDistribution(profile.entries);
-  const summary = getTasteSummary(profile.entries);
+  const dist = useMemo(() => getRatingDistribution(profile.entries), [profile.entries]);
+  const avg = useMemo(() => getAvgRating(profile.entries), [profile.entries]);
+  const byYear = useMemo(() => getAvgRatingByYear(profile.entries), [profile.entries]);
+  const decades = useMemo(() => getDecadeDistribution(profile.entries), [profile.entries]);
+  const summary = useMemo(() => getTasteSummary(profile.entries), [profile.entries]);
 
-  const distData = Object.entries(dist)
-    .map(([rating, count]) => ({
-      rating: `${rating}★`,
-      count,
-      ratingNum: parseFloat(rating),
-    }))
-    .sort((a, b) => a.ratingNum - b.ratingNum);
+  const distData = useMemo(() =>
+    Object.entries(dist)
+      .map(([rating, count]) => ({ rating: `${rating}★`, count, ratingNum: parseFloat(rating) }))
+      .sort((a, b) => a.ratingNum - b.ratingNum),
+    [dist]
+  );
 
-  const seenFilms = new Set(profile.entries.map(e => e.name.toLowerCase()));
-  const recommendations = getRecommendations(seenFilms, [], avg, 5);
+  const sortedDecades = useMemo(() => [...decades].sort((a, b) => b.count - a.count), [decades]);
+  const maxDecadeCount = useMemo(() => Math.max(...decades.map(x => x.count), 1), [decades]);
 
-  const topRated = [...profile.entries]
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 5);
+  const recommendations = useMemo(() => {
+    const seenFilms = new Set(profile.entries.map(e => e.name.toLowerCase()));
+    return getRecommendations(seenFilms, [], avg, 5);
+  }, [profile.entries, avg]);
+
+  const topRated = useMemo(() =>
+    [...profile.entries].sort((a, b) => b.rating - a.rating).slice(0, 5),
+    [profile.entries]
+  );
 
   return (
     <motion.div
@@ -85,18 +91,15 @@ const SoloStats = ({ profile }: SoloStatsProps) => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="sepia-card rounded-sm p-6 worn-edge">
           <h3 className="font-display text-lg text-primary mb-4">Most Watched Decades</h3>
           <div className="space-y-2">
-            {decades.sort((a, b) => b.count - a.count).map((d) => {
-              const maxCount = Math.max(...decades.map(x => x.count));
-              return (
-                <div key={d.decade} className="flex items-center gap-3">
-                  <span className="font-typewriter text-sm text-muted-foreground w-12">{d.decade}</span>
-                  <div className="flex-1 h-3 bg-secondary rounded-sm overflow-hidden">
-                    <div className="h-full bg-primary rounded-sm transition-all" style={{ width: `${(d.count / maxCount) * 100}%` }} />
-                  </div>
-                  <span className="font-typewriter text-xs text-muted-foreground w-8 text-right">{d.count}</span>
+            {sortedDecades.map((d) => (
+              <div key={d.decade} className="flex items-center gap-3">
+                <span className="font-typewriter text-sm text-muted-foreground w-12">{d.decade}</span>
+                <div className="flex-1 h-3 bg-secondary rounded-sm overflow-hidden">
+                  <div className="h-full bg-primary rounded-sm transition-all" style={{ width: `${(d.count / maxDecadeCount) * 100}%` }} />
                 </div>
-              );
-            })}
+                <span className="font-typewriter text-xs text-muted-foreground w-8 text-right">{d.count}</span>
+              </div>
+            ))}
           </div>
         </motion.div>
 
@@ -109,10 +112,16 @@ const SoloStats = ({ profile }: SoloStatsProps) => {
                   <p className="font-typewriter text-sm text-foreground truncate">{film.name}</p>
                   <p className="text-xs text-muted-foreground">{film.year}</p>
                 </div>
-                <div className="flex items-center gap-1 ml-2 shrink-0">
-                  {Array.from({ length: 5 }, (_, j) => (
-                    <Star key={j} className={`w-3 h-3 ${j < film.rating ? 'star-filled fill-primary' : 'star-empty'}`} />
-                  ))}
+                <div className="flex items-center gap-0.5 ml-2 shrink-0">
+                  {Array.from({ length: 5 }, (_, j) => {
+                    const full = j + 1 <= film.rating;
+                    const half = !full && j < film.rating;
+                    return full
+                      ? <Star key={j} className="w-3 h-3 fill-primary text-primary" />
+                      : half
+                      ? <StarHalf key={j} className="w-3 h-3 fill-primary text-primary" />
+                      : <Star key={j} className="w-3 h-3 star-empty" />;
+                  })}
                 </div>
               </div>
             ))}

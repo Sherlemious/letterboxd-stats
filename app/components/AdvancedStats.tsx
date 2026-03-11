@@ -14,11 +14,11 @@ interface AdvancedStatsProps {
 }
 
 const tooltipStyle = {
-  background: 'hsl(30, 12%, 14%)',
-  border: '1px solid hsl(30, 12%, 22%)',
+  background: 'hsl(var(--card))',
+  border: '1px solid hsl(var(--border))',
   borderRadius: '2px',
   fontFamily: 'Special Elite',
-  color: 'hsl(38, 50%, 85%)',
+  color: 'hsl(var(--card-foreground))',
 };
 
 const Card = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (

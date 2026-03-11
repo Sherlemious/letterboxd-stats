@@ -6,12 +6,7 @@ export interface LetterboxdEntry {
   rating: number;
 }
 
-export interface DiaryEntry {
-  date: string;
-  name: string;
-  year: number;
-  letterboxdUri: string;
-  rating: number;
+export interface DiaryEntry extends LetterboxdEntry {
   rewatch: boolean;
   tags: string;
 }

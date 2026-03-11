@@ -1,4 +1,5 @@
 import { LetterboxdEntry, YearStat, DecadeStat, ComparisonResult } from './types';
+import { filmKey } from './utils';
 
 export function getRatingDistribution(entries: LetterboxdEntry[]): Record<number, number> {
   const dist: Record<number, number> = {};
@@ -94,8 +95,8 @@ export function compareProfiles(
   const mapA = new Map<string, LetterboxdEntry>();
   const mapB = new Map<string, LetterboxdEntry>();
 
-  profileA.entries.forEach(e => mapA.set(`${e.name.toLowerCase()}-${e.year}`, e));
-  profileB.entries.forEach(e => mapB.set(`${e.name.toLowerCase()}-${e.year}`, e));
+  profileA.entries.forEach(e => mapA.set(filmKey(e.name, e.year), e));
+  profileB.entries.forEach(e => mapB.set(filmKey(e.name, e.year), e));
 
   const allFilms = new Set([...mapA.keys(), ...mapB.keys()]);
   const sharedKeys = [...mapA.keys()].filter(k => mapB.has(k));

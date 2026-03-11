@@ -4,8 +4,8 @@ import { Upload, User, Loader2 } from 'lucide-react';
 import { parseLetterboxdCSV, parseDiaryCSV } from '@/lib/csv-parser';
 import { extractFromZip } from '@/lib/zip-extractor';
 import { enrichFilmsWithTMDB, getTmdbApiKey, EnrichmentProgress } from '@/lib/tmdb';
-import { lookupFilm } from '@/lib/film-metadata';
 import { UserProfile, FilmMeta } from '@/lib/types';
+import { filmKey } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 interface FileUploadProps {
@@ -21,23 +21,59 @@ const FileUpload = ({ onProfileAdd }: FileUploadProps) => {
 
   const enrichAndAdd = useCallback(
     async (entries: ReturnType<typeof parseLetterboxdCSV>, diary: ReturnType<typeof parseDiaryCSV>) => {
-      // Start with hardcoded metadata as fallback
+      // 1. Hardcoded metadata as initial fallback (lazy-loaded — 44KB only when needed)
       const metadata = new Map<string, FilmMeta>();
+      const { lookupFilm } = await import('@/lib/film-metadata');
       entries.forEach(e => {
-        const key = `${e.name.toLowerCase()}-${e.year}`;
         const fallback = lookupFilm(e.name, e.year);
-        if (fallback) metadata.set(key, fallback);
+        if (fallback) metadata.set(filmKey(e.name, e.year), fallback);
       });
 
-      // Enrich via TMDB if API key is set
+      // 2. DB lookup — overrides hardcoded data where available (free, fast)
+      try {
+        setEnrichProgress({ current: 0, total: entries.length, status: 'Checking database...' });
+        const res = await fetch('/api/movies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ films: entries.map(e => ({ name: e.name, year: e.year })) }),
+        });
+        if (res.ok) {
+          const dbData: Record<string, FilmMeta> = await res.json();
+          Object.entries(dbData).forEach(([key, meta]) => metadata.set(key, meta));
+        }
+      } catch {
+        // DB unavailable — silently continue with existing metadata
+      } finally {
+        setEnrichProgress(null);
+      }
+
+      // 3. TMDB for films still missing metadata (only if user has an API key)
       if (getTmdbApiKey()) {
-        setEnrichProgress({ current: 0, total: entries.length, status: 'Starting enrichment...' });
-        const tmdbData = await enrichFilmsWithTMDB(
-          entries.map(e => ({ name: e.name, year: e.year })),
-          (progress) => setEnrichProgress(progress),
-        );
-        // TMDB data overrides hardcoded
-        tmdbData.forEach((meta, key) => metadata.set(key, meta));
+        const unenriched = entries.filter(e => !metadata.has(filmKey(e.name, e.year)));
+        if (unenriched.length > 0) {
+          setEnrichProgress({ current: 0, total: unenriched.length, status: 'Starting TMDB enrichment...' });
+          const tmdbData = await enrichFilmsWithTMDB(
+            unenriched.map(e => ({ name: e.name, year: e.year })),
+            (progress) => setEnrichProgress(progress),
+          );
+          tmdbData.forEach((meta, key) => metadata.set(key, meta));
+
+          // Save newly fetched TMDB data back to DB so future users benefit (fire-and-forget)
+          if (tmdbData.size > 0) {
+            const filmsToSave = [...tmdbData.entries()]
+              .map(([key, meta]) => {
+                const entry = unenriched.find(e => filmKey(e.name, e.year) === key);
+                return entry ? { name: entry.name, year: entry.year, meta } : null;
+              })
+              .filter((f): f is { name: string; year: number; meta: FilmMeta } => f !== null);
+
+            fetch('/api/movies', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ films: filmsToSave }),
+            }).catch(() => {}); // intentionally fire-and-forget
+          }
+        }
         setEnrichProgress(null);
       }
 

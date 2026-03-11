@@ -1,4 +1,5 @@
 import { FilmMeta } from './types';
+import { filmKey } from './utils';
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const CACHE_KEY = 'reelmates_tmdb_cache';
@@ -49,13 +50,15 @@ function setCache(cache: Record<string, FilmMeta>) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch {
-    // Storage full, clear old entries
-    localStorage.removeItem(CACHE_KEY);
+    // Storage full — evict the oldest half of entries (insertion-order approximates recency)
+    const entries = Object.entries(cache);
+    const trimmed = Object.fromEntries(entries.slice(Math.floor(entries.length / 2)));
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(trimmed));
+    } catch {
+      localStorage.removeItem(CACHE_KEY); // last resort
+    }
   }
-}
-
-function cacheKey(name: string, year: number): string {
-  return `${name.toLowerCase()}-${year}`;
 }
 
 // --- API Calls ---
@@ -134,7 +137,7 @@ export async function enrichFilmsWithTMDB(
 
   // Check cache first
   for (const film of films) {
-    const key = cacheKey(film.name, film.year);
+    const key = filmKey(film.name, film.year);
     if (cache[key]) {
       result.set(key, cache[key]);
     } else {

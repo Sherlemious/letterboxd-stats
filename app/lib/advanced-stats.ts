@@ -2,6 +2,7 @@ import { LetterboxdEntry, DiaryEntry, DirectorStat, GenreStat, AdvancedSoloStats
 import { COUNTRY_FLAGS, NON_ENGLISH_COUNTRIES } from './film-metadata';
 import { CURATED_FILMS } from './film-data';
 import { getAvgRating } from './stats';
+import { filmKey } from './utils';
 
 interface EnrichedEntry extends LetterboxdEntry {
   director?: string;
@@ -13,7 +14,7 @@ interface EnrichedEntry extends LetterboxdEntry {
 function enrichEntries(entries: LetterboxdEntry[], metadata: Map<string, FilmMeta>): { enriched: EnrichedEntry[]; enrichedCount: number } {
   let enrichedCount = 0;
   const enriched = entries.map(e => {
-    const key = `${e.name.toLowerCase()}-${e.year}`;
+    const key = filmKey(e.name, e.year);
     const meta = metadata.get(key);
     if (meta) {
       enrichedCount++;
@@ -155,7 +156,7 @@ export function computeAdvancedSoloStats(entries: LetterboxdEntry[], diary: Diar
     if (isNaN(date.getTime())) return;
     const month = date.getMonth();
     monthCounts[month] = (monthCounts[month] || 0) + 1;
-    const key = `${d.name.toLowerCase()}-${d.year}`;
+    const key = filmKey(d.name, d.year);
     const meta = metadata.get(key);
     if (meta) {
       if (!monthGenres[month]) monthGenres[month] = {};
@@ -243,8 +244,8 @@ export function computeAdvancedCompareStats(
 ): AdvancedCompareStats {
   const mapA = new Map<string, LetterboxdEntry>();
   const mapB = new Map<string, LetterboxdEntry>();
-  profileA.entries.forEach(e => mapA.set(`${e.name.toLowerCase()}-${e.year}`, e));
-  profileB.entries.forEach(e => mapB.set(`${e.name.toLowerCase()}-${e.year}`, e));
+  profileA.entries.forEach(e => mapA.set(filmKey(e.name, e.year), e));
+  profileB.entries.forEach(e => mapB.set(filmKey(e.name, e.year), e));
 
   const sharedKeys = [...mapA.keys()].filter(k => mapB.has(k));
 
@@ -286,15 +287,15 @@ export function computeAdvancedCompareStats(
   // === INFLUENCE MAP ===
   const topA = profileA.entries.filter(e => e.rating >= 4.5);
   const topB = profileB.entries.filter(e => e.rating >= 4.5);
-  const bSeenSet = new Set(profileB.entries.map(e => `${e.name.toLowerCase()}-${e.year}`));
-  const aSeenSet = new Set(profileA.entries.map(e => `${e.name.toLowerCase()}-${e.year}`));
+  const bSeenSet = new Set(profileB.entries.map(e => filmKey(e.name, e.year)));
+  const aSeenSet = new Set(profileA.entries.map(e => filmKey(e.name, e.year)));
 
   const bInfluencedByA = topA
-    .filter(e => bSeenSet.has(`${e.name.toLowerCase()}-${e.year}`))
+    .filter(e => bSeenSet.has(filmKey(e.name, e.year)))
     .map(e => ({ name: e.name, year: e.year, rating: e.rating }));
 
   const aInfluencedByB = topB
-    .filter(e => aSeenSet.has(`${e.name.toLowerCase()}-${e.year}`))
+    .filter(e => aSeenSet.has(filmKey(e.name, e.year)))
     .map(e => ({ name: e.name, year: e.year, rating: e.rating }));
 
   const aInfluenceScore = topB.length > 0 ? Math.round((aInfluencedByB.length / topB.length) * 100) : 0;

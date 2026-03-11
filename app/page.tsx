@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { useProfiles } from '@/hooks/use-profiles';
 import { UserProfile } from '@/lib/types';
 import FileUpload from '@/components/FileUpload';
 import SoloStats from '@/components/SoloStats';
@@ -13,20 +14,13 @@ import { X, BarChart3, GitCompareArrows, Clapperboard, Github, Globe } from 'luc
 type Tab = 'upload' | 'solo' | 'compare';
 
 const Index = () => {
-  const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('upload');
-  const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
+  const { profiles, selectedId, selected, addProfile, removeProfile, setSelectedId } = useProfiles();
 
   const handleProfileAdd = (profile: UserProfile) => {
-    setProfiles(prev => [...prev, profile]);
+    addProfile(profile);
+    setActiveTab('solo');
   };
-
-  const handleRemoveProfile = (id: string) => {
-    setProfiles(prev => prev.filter(p => p.id !== id));
-    if (selectedProfile === id) setSelectedProfile(null);
-  };
-
-  const selected = profiles.find(p => p.id === selectedProfile);
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -90,12 +84,12 @@ const Index = () => {
                 <div
                   key={p.id}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-sm border cursor-pointer transition-colors ${
-                    selectedProfile === p.id
+                    selectedId === p.id
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border text-foreground hover:border-primary/50'
                   }`}
                   onClick={() => {
-                    setSelectedProfile(p.id);
+                    setSelectedId(p.id);
                     setActiveTab('solo');
                   }}
                 >
@@ -104,7 +98,7 @@ const Index = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRemoveProfile(p.id);
+                      removeProfile(p.id);
                     }}
                     className="ml-1 text-muted-foreground hover:text-accent"
                   >
@@ -156,7 +150,7 @@ const Index = () => {
                       {profiles.map(p => (
                         <button
                           key={p.id}
-                          onClick={() => setSelectedProfile(p.id)}
+                          onClick={() => setSelectedId(p.id)}
                           className="px-4 py-2 border border-border rounded-sm font-typewriter text-sm text-foreground hover:border-primary hover:text-primary transition-colors"
                         >
                           {p.name}
