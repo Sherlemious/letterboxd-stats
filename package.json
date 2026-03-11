@@ -12,7 +12,9 @@
     "db:migrate": "prisma migrate deploy",
     "db:ingest": "tsx scripts/ingest-tmdb.ts",
     "db:import:16k": "tsx scripts/import-kaggle-16k.ts",
-    "db:import:950k": "NODE_OPTIONS=--max-old-space-size=1024 tsx scripts/import-kaggle-950k.ts"
+    "db:import:950k": "NODE_OPTIONS=--max-old-space-size=1024 tsx scripts/import-kaggle-950k.ts",
+    "db:import:imdb": "tsx scripts/import-imdb.ts",
+    "db:patch:countries": "tsx scripts/patch-imdb-countries.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
